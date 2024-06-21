@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BERT Chatbot</title>
+</head>
+<body>
+    <h1>BERT Chatbot</h1>
+    <form action="/predict" method="post">
+        <label for="instruction">Instruction:</label>
+        <input type="text" id="instruction" name="instruction"><br><br>
+        <label for="input">Input:</label>
+        <textarea id="input" name="input" rows="4" cols="50"></textarea><br><br>
+        <input type="submit" value="Submit">
+    </form>
+    {% if response %}
+    <h2>Response:</h2>
+    <p>{{ response }}</p>
+    {% endif %}
+</body>
+</html>
