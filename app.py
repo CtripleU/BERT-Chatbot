@@ -1,40 +1,68 @@
-from flask import Flask, request, jsonify, render_template
-from transformers import BertTokenizer, BertForSequenceClassification
+from flask import Flask, render_template, request, jsonify
+from transformers import AutoTokenizer, BertForSequenceClassification
 import torch
-import os
+import re
+from sentence_transformers import SentenceTransformer
+from sklearn.metrics.pairwise import cosine_similarity
 
 app = Flask(__name__)
 
-# Load the model and tokenizer
-model_save_path = r'C:\Users\Lenovo\OneDrive\Downloads\BERT-Chatbot\saved-model'
-tokenizer = BertTokenizer.from_pretrained(model_save_path)
-model = BertForSequenceClassification.from_pretrained(model_save_path, local_files_only=True)
+# Load your saved model and tokenizer
+model_path = "./saved_model"
+model = BertForSequenceClassification.from_pretrained(model_path)
+tokenizer = AutoTokenizer.from_pretrained(model_path)
 
-# Ensure the model is in evaluation mode
-model.eval()
+# Load the sentence transformer model
+semantic_model = SentenceTransformer('all-MiniLM-L6-v2')
+
+# Load your label mapping (you'll need to save this during training and load it here)
+import json
+with open('label_mapping.json', 'r') as f:
+    label_mapping = json.load(f)
+
+# Encode all possible responses
+response_embeddings = semantic_model.encode(list(label_mapping.keys()))
+
+def clean_text(text):
+    text = text.lower()
+    text = re.sub(r'[^a-z\s]', '', text)
+    text = re.sub(r'\s+', ' ', text).strip()
+    return text
+
+def semantic_search(query, top_k=5):
+    query_embedding = semantic_model.encode([query])
+    similarities = cosine_similarity(query_embedding, response_embeddings)[0]
+    top_indices = similarities.argsort()[-top_k:][::-1]
+    return [(list(label_mapping.keys())[i], similarities[i]) for i in top_indices]
+
+def predict_category(instruction, input_text):
+    cleaned_instruction = clean_text(instruction)
+    cleaned_input = clean_text(input_text)
+
+    inputs = tokenizer(f"{cleaned_instruction} {cleaned_input}", return_tensors="pt", truncation=True, padding="max_length", max_length=512)
+    with torch.no_grad():
+        outputs = model(**inputs)
+    logits = outputs.logits
+    predicted_class_id = torch.argmax(logits, dim=-1).item()
+    bert_prediction = list(label_mapping.keys())[list(label_mapping.values()).index(predicted_class_id)]
+
+    semantic_results = semantic_search(f"{cleaned_instruction} {cleaned_input}")
+
+    if bert_prediction in [result[0] for result in semantic_results]:
+        return bert_prediction
+    else:
+        return semantic_results[0][0]
 
 @app.route('/')
 def home():
     return render_template('index.html')
 
-@app.route('/predict', methods=['POST'])
-def predict():
+@app.route('/get_response', methods=['POST'])
+def get_response():
     instruction = request.form['instruction']
-    input_text = request.form['input']
-
-    combined_text = instruction + " " + input_text
-
-    # Tokenize the input text
-    inputs = tokenizer(combined_text, return_tensors='pt', padding='max_length', truncation=True, max_length=512)
-    input_ids = inputs['input_ids']
-
-    with torch.no_grad():
-        outputs = model(input_ids)
-        logits = outputs.logits
-        prediction = torch.argmax(logits, dim=-1).item()
-
-    response = {'prediction': prediction}
-    return render_template('index.html', response=response['prediction'])
+    user_input = request.form['user_input']
+    response = predict_category(instruction, user_input)
+    return jsonify({'response': response})
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(debug=True)
