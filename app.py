@@ -4,6 +4,8 @@ import torch
 import re
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+import json
+import os
 
 app = Flask(__name__)
 
@@ -15,10 +17,16 @@ tokenizer = AutoTokenizer.from_pretrained(model_path)
 # Load the sentence transformer model
 semantic_model = SentenceTransformer('all-MiniLM-L6-v2')
 
-# Load your label mapping (you'll need to save this during training and load it here)
-import json
-with open('label_mapping.json', 'r') as f:
-    label_mapping = json.load(f)
+# Try to load label_mapping
+try:
+    with open('label_mapping.json', 'r') as f:
+        label_mapping = json.load(f)
+except FileNotFoundError:
+    print("label_mapping.json not found. Please ensure it was saved during training.")
+    label_mapping = {}
+
+# Reverse the label_mapping for easy lookup
+rev_label_mapping = {v: k for k, v in label_mapping.items()}
 
 # Encode all possible responses
 response_embeddings = semantic_model.encode(list(label_mapping.keys()))
@@ -44,7 +52,7 @@ def predict_category(instruction, input_text):
         outputs = model(**inputs)
     logits = outputs.logits
     predicted_class_id = torch.argmax(logits, dim=-1).item()
-    bert_prediction = list(label_mapping.keys())[list(label_mapping.values()).index(predicted_class_id)]
+    bert_prediction = rev_label_mapping[predicted_class_id]
 
     semantic_results = semantic_search(f"{cleaned_instruction} {cleaned_input}")
 
