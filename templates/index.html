@@ -1,45 +1,56 @@
+<!-- index.html in templates folder -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Medical Chatbot</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-        #chatbox { height: 300px; border: 1px solid #ddd; overflow-y: auto; padding: 10px; margin-bottom: 20px; }
-        input, button { margin-bottom: 10px; }
-    </style>
+    <title>ChatDoctor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
-    <h1>Medical Chatbot</h1>
-    <div id="chatbox"></div>
-    <input type="text" id="instruction" placeholder="Instruction (e.g., 'If you are a doctor, please answer the medical question')" style="width: 100%;">
-    <input type="text" id="user_input" placeholder="Your medical question" style="width: 100%;">
-    <button onclick="sendMessage()">Send</button>
+    <div class="container">
+        <header>
+            <h1>Hello! Welcome to ChatDoctor.</h1>
+            <h3>I am a doctor's assistant dedicated to answering your medical questions. Please enter your question below and I will provide you with a response.</h3>
+        </header>
+        
+        <form id="query-form">
+            <label for="instruction">Instruction:</label>
+            <input type="text" id="instruction" name="instruction" required>
+
+            <label for="input">Input:</label>
+            <textarea id="input" name="input" rows="5" required></textarea>
+
+            <button type="submit">Submit</button>
+        </form>
+        <div class="response" id="response"></div>
+    </div>
+
+    <footer>
+        <p>Built with 💖 by Cumi, fine-tuning <a href="https://huggingface.co/emilyalsentzer/Bio_ClinicalBERT">Bio_ClinicalBERT</a> and training on <a href="https://huggingface.co/datasets/lavita/ChatDoctor-HealthCareMagic-100k">ChatDoctor-HealthCareMagic-100k</a></p>
+    </footer>
 
     <script>
-        function sendMessage() {
-            var instruction = $('#instruction').val();
-            var user_input = $('#user_input').val();
-            
-            $('#chatbox').append('<p><strong>You:</strong> ' + user_input + '</p>');
-            
-            $.ajax({
-                url: '/get_response',
+        document.getElementById('query-form').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const instruction = document.getElementById('instruction').value;
+            const input = document.getElementById('input').value;
+            const responseDiv = document.getElementById('response');
+
+            const response = await fetch('/predict', {
                 method: 'POST',
-                data: {
-                    'instruction': instruction,
-                    'user_input': user_input
+                headers: {
+                    'Content-Type': 'application/json',
                 },
-                success: function(data) {
-                    $('#chatbox').append('<p><strong>Chatbot:</strong> ' + data.response + '</p>');
-                    $('#chatbox').scrollTop($('#chatbox')[0].scrollHeight);
-                }
+                body: JSON.stringify({
+                    'instruction': instruction,
+                    'input': input
+                })
             });
-            
-            $('#user_input').val('');
-        }
+
+            const responseData = await response.json();
+            responseDiv.innerHTML = responseData.response;
+        });
     </script>
 </body>
 </html>
