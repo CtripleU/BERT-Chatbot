@@ -4,6 +4,20 @@
 
 This project implements a machine learning model for answering medical questions. It uses the BERT architecture (Bidirectional Encoder Representations from Transformers) for sequence classification, specifically the Bio_ClinicalBERT model, to understand and respond to medical queries. The model is finetuned on the ChatDoctor-HealthCareMagic-100k dataset, which contains a large number of medical questions and their corresponding answers. This README provides a comprehensive guide to understanding, setting up, and running the project.
 
+## Table of Contents
+
+- [Project Overview](#project-overview)
+- [Features](#features)
+- [Installation](#installation)
+
+- [Dataset](#dataset)
+- [Dataset Details](#dataset-details)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Deployment](#deployment)
+- [Screenshots](#screenshots)
+- [License](#license)
+
 ## Features
 
 - Utilizes Bio_ClinicalBERT for understanding medical terminology
@@ -68,7 +82,8 @@ After training, the model, tokenizer, and label mapping are saved for later use 
 
 The model's performance is evaluated using various metrics calculated on the validation and test datasets.
 
-5. Deployment
+
+## Deployment
 The chatbot is deployed using a Flask web application that serves a REST API. The model and tokenizer are loaded into the Flask app, and predictions are made based on user inputs.
 
 - Starting the Flask application:
@@ -87,6 +102,15 @@ curl -X POST http://localhost:5000/predict -H "Content-Type: application/json" -
   "input": "I have a headache and fever. What should I do?"
 }'
 ```
+
+## Acknowledgments
+
+The creators of the ChatDoctor-HealthCareMagic-100k dataset
+The Hugging Face team for their transformers library
+The creators of Bio_ClinicalBERT
+
+## License
+This project is licensed under the MIT License.
 
 ## Screenshots
 ![Terminal](./screenshots/terminal.png)
