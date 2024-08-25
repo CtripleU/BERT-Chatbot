@@ -1,3 +1,4 @@
+python 3.8
 datasets
 torch
 numpy
@@ -8,3 +9,4 @@ accelerate
 nltk
 rouge_score
 Flask
+curl
