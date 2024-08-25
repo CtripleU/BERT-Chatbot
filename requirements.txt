@@ -1,0 +1,10 @@
+datasets
+torch
+numpy
+scikit-learn
+transformers
+sentence-transformers
+accelerate
+nltk
+rouge_score
+Flask
